@@ -1,0 +1,384 @@
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.Timer;
+
+public class SuperMario implements Runnable {
+  static boolean readyToFireLeft;
+  static boolean readyToFireRight;
+  static boolean fireshotLeft;
+  static boolean fireshotRight;
+  static int marioFacingLeftX;
+  static int marioFacingLeftY;
+  static int marioFacingRightX;
+  static int marioFacingRightY;
+  static int marioFacingLeft_JumpY;
+  static int marioFacingRight_JumpY;
+  static int fireballFacingLeftX;
+  static int fireballFacingRightX;
+  static int fireballFacingLeftXMoved;
+  static int fireballFacingRightXMoved;
+  static Clip clip_mainTheme;
+  static Clip clip_coin;
+  static Clip clip_walking;
+  static Clip clip_jumping;
+  static Clip clip_fireball;
+  static Clip clip_death;
+  static ImageIcon marioIcon;
+  static JButton restart;
+  static JFrame frame;
+  static JLabel[] coin;
+  static JLabel marioFacingLeft;
+  static JLabel marioFacingRight;
+  static JLabel fireballFacingLeft;
+  static JLabel fireballFacingRight;
+  static JLabel ground;
+  static JLabel healthBarFull;
+  static JLabel healthBarEmpty;
+  static JLabel marioDeath;
+  static JLabel movingCloud;
+  static JLabel gameOver;
+  static JLabel score;
+  public static void main(String[] args) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
+    fireshotLeft = false;
+    fireshotRight = false;
+    File marioMainTheme = new File("MarioMainTheme.wav");
+    AudioInputStream audioStream_mainTheme;
+    audioStream_mainTheme = AudioSystem.getAudioInputStream(marioMainTheme);
+    clip_mainTheme = AudioSystem.getClip();
+    clip_mainTheme.open(audioStream_mainTheme);
+    File marioCoinSound = new File("CoinSound.wav");
+    AudioInputStream audioStream_coin;
+    audioStream_coin = AudioSystem.getAudioInputStream(marioCoinSound);
+    clip_coin = AudioSystem.getClip();
+    clip_coin.open(audioStream_coin);
+    File marioWalkingSound = new File("MarioWalkingSound.wav");
+    AudioInputStream audioStream_walking;
+    audioStream_walking = AudioSystem.getAudioInputStream(marioWalkingSound);
+    clip_walking = AudioSystem.getClip();
+    clip_walking.open(audioStream_walking);
+    File marioJumpingSound = new File("MarioJumpingSound.wav");
+    AudioInputStream audioStream_jumping;
+    audioStream_jumping = AudioSystem.getAudioInputStream(marioJumpingSound);
+    clip_jumping = AudioSystem.getClip();
+    clip_jumping.open(audioStream_jumping);
+    File fireBallSound = new File("FireBallSound.wav");
+    AudioInputStream audioStream_fireBall;
+    audioStream_fireBall = AudioSystem.getAudioInputStream(fireBallSound);
+    clip_fireball = AudioSystem.getClip();
+    clip_fireball.open(audioStream_fireBall);
+    File marioDeathSound = new File("MarioDeathSound.wav");
+    AudioInputStream audioStream_death;
+    audioStream_death = AudioSystem.getAudioInputStream(marioDeathSound);
+    clip_death = AudioSystem.getClip();
+    clip_death.open(audioStream_death);
+
+    Color color = new Color(92, 148, 253);
+    frame = new JFrame("Super Mario");
+    keyboardControl();
+    coin = new JLabel[10];
+    for (int i = 0; i < 10; i++) {
+      coin[i] = new JLabel(new ImageIcon("Coin.gif"));
+      frame.add(coin[i]);
+    }
+    coin[0].setBounds(160, 470, 50, 50);
+    coin[1].setBounds(240, 470, 50, 50);
+    coin[2].setBounds(320, 470, 50, 50);
+    coin[3].setBounds(400, 470, 50, 50);
+    coin[4].setBounds(480, 470, 50, 50);
+    coin[5].setBounds(560, 470, 50, 50);
+    coin[6].setBounds(640, 470, 50, 50);
+    coin[7].setBounds(720, 470, 50, 50);
+    coin[8].setBounds(800, 470, 50, 50);
+    coin[9].setBounds(880, 470, 50, 50);
+    marioFacingLeft = new JLabel(new ImageIcon("MarioFacingLeft.png"));
+    marioFacingRight = new JLabel(new ImageIcon("MarioFacingRight.png"));
+    fireballFacingLeft = new JLabel(new ImageIcon("FireBallFacingLeft.gif"));
+    fireballFacingRight = new JLabel(new ImageIcon("FireBallFacingRight.gif"));
+    ground = new JLabel(new ImageIcon("Ground.png"));
+    healthBarFull = new JLabel(new ImageIcon("HealthBarFull.png"));
+    healthBarEmpty = new JLabel(new ImageIcon("HealthBarEmpty.png"));
+    marioDeath = new JLabel(new ImageIcon("MarioDeath.png"));
+    movingCloud = new JLabel(new ImageIcon("MovingCloud.gif"));
+    ground.setBounds(0, 622, 1056, 28);
+    healthBarFull.setBounds(1050, 40, 175, 40);
+    healthBarEmpty.setBounds(1050, 40, 175, 40);
+    marioFacingLeft.setBounds(0, 565, 58, 54);
+    marioFacingRight.setBounds(0, 565, 58, 54);
+    movingCloud.setBounds(0, 65, 1200, 229);
+    fireballFacingLeft.setSize(241, 50);
+    fireballFacingRight.setSize(241, 50);
+    marioFacingLeftX = (int) marioFacingLeft.getX();
+    marioFacingLeftY = (int) marioFacingLeft.getY();
+    marioFacingRightX = (int) marioFacingRight.getX();
+    marioFacingRightY = (int) marioFacingRight.getY();
+    fireballFacingLeftX = (int) fireballFacingLeft.getX();
+    fireballFacingRightX = (int) fireballFacingRight.getX();
+    gameOver = new JLabel("Game Over");
+    restart = new JButton("Restart?");
+    gameOver.setBounds(500, 300, 300, 50);
+    gameOver.setForeground(Color.WHITE);
+    gameOver.setFont(new Font("Arial", Font.ITALIC, 50));
+    score = new JLabel("Score: 0");
+    score.setBounds(500, 25, 350, 70);
+    score.setForeground(Color.WHITE);
+    score.setFont(new Font("Arial", Font.ITALIC, 70));
+    restart.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        if (marioDeath.getParent() != null) {
+          frame.remove(marioDeath);
+          marioFacingRight.setLocation(0, 565);
+          frame.add(marioFacingRight);
+          frame.revalidate();
+          frame.repaint();
+        }
+        frame.remove(gameOver);
+        frame.remove(restart);
+        frame.remove(healthBarEmpty);
+        frame.add(healthBarFull);
+        frame.revalidate();
+        frame.repaint();
+        clip_mainTheme.setMicrosecondPosition(0);
+        clip_mainTheme.start();
+        score.setText("Score: 0");
+      }
+    });
+    restart.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    restart.setBounds(500, 350, 270, 50);
+    restart.setForeground(Color.PINK);
+    restart.setFont(new Font("Arial", Font.ITALIC, 50));
+    marioDeath.setBounds(marioFacingRight.getBounds());
+    marioIcon = new ImageIcon("MarioIcon.png");
+    frame.add(marioFacingRight);
+    frame.add(ground);
+    frame.add(healthBarFull);
+    frame.add(movingCloud);
+    frame.add(score);
+    frame.getContentPane().setBackground(color);
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    frame.setIconImage(marioIcon.getImage());
+    frame.setLayout(null);
+    frame.setVisible(true);
+    clip_mainTheme.loop(Clip.LOOP_CONTINUOUSLY);
+    SuperMario superMario = new SuperMario();
+    Thread thread = new Thread(superMario);
+    thread.start();
+  }
+  public static void keyboardControl() {
+    frame.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        //a/A or <- for walking left
+        if (e.getKeyChar() == 'a' || e.getKeyChar() == 'a' || e.getKeyCode() == 37) {
+          if (marioFacingRight.getParent() != null) {
+            marioFacingLeft.setBounds(marioFacingRight.getBounds());
+            frame.remove(marioFacingRight);
+            frame.add(marioFacingLeft);
+            frame.revalidate();
+            frame.repaint();
+          }
+          if (marioFacingLeft.getX() > 0) {
+            marioFacingLeft.setLocation(marioFacingLeft.getX() - 30, marioFacingLeft.getY());
+          }
+          clip_walking.setMicrosecondPosition(0);
+          clip_walking.start();
+        }
+        //d/D or -> for walking right
+        if (e.getKeyChar() == 'd' || e.getKeyChar() == 'D' || e.getKeyCode() == 39) {
+          if (marioFacingLeft.getParent() != null) {
+            marioFacingRight.setBounds(marioFacingLeft.getBounds());
+            frame.remove(marioFacingLeft);
+            frame.add(marioFacingRight);
+            frame.revalidate();
+            frame.repaint();
+
+          }
+          if (marioFacingRight.getX() < 1050) {
+            marioFacingRight.setLocation(marioFacingRight.getX() + 30, marioFacingRight.getY());
+          } else if (marioFacingRight.getX() > 900) {
+            Timer timer_falling = new Timer(0, new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                frame.remove(marioFacingLeft);
+                frame.remove(marioFacingRight);
+                frame.remove(healthBarFull);
+                frame.add(marioDeath);
+                frame.add(healthBarEmpty);
+                frame.add(gameOver);
+                frame.add(restart);
+                frame.revalidate();
+                frame.repaint();
+                marioDeath.setLocation(marioFacingRight.getX(), marioDeath.getY() + 10);
+                score.setSize(700, 70);
+                score.setText("Score: -999999");
+              }
+            });
+            timer_falling.start();
+            clip_mainTheme.stop();
+            clip_death.start();
+          }
+          clip_walking.setMicrosecondPosition(0);
+          clip_walking.start();
+        }
+        //j/J for attack
+        if (e.getKeyChar() == 'j' || e.getKeyChar() == 'J') {
+          if (marioFacingLeft.getParent() != null) {
+            fireballFacingLeft.setLocation(marioFacingLeft.getX() - 200, marioFacingLeft.getY());
+            frame.remove(fireballFacingRight);
+            frame.add(fireballFacingLeft);
+            frame.revalidate();
+            frame.repaint();
+
+          }
+          if (marioFacingRight.getParent() != null) {
+            fireballFacingRight.setLocation(marioFacingRight.getX() + 75, marioFacingRight.getY());
+            frame.remove(fireballFacingLeft);
+            frame.add(fireballFacingRight);
+            frame.revalidate();
+            frame.repaint();
+          }
+          clip_fireball.setMicrosecondPosition(0);
+          clip_fireball.start();
+
+        }
+        //space for jumping
+        if (e.getKeyCode() == 32) {
+          if (marioFacingLeft.getParent() != null) {
+            marioFacingLeft.setLocation(marioFacingLeftX, marioFacingLeftY - 50);
+          } else if (marioFacingRight.getParent() != null) {
+            marioFacingRight.setLocation(marioFacingRightX, marioFacingRightY - 50);
+          }
+          clip_jumping.setMicrosecondPosition(0);
+          clip_jumping.start();
+
+          if (coin[0].getParent() != null) {
+            frame.remove(coin[0]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.start();
+            score.setText("Score: 50");
+          } else if (coin[0].getParent() == null && coin[1].getParent() != null) {
+            frame.remove(coin[1]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 100");
+          } else if (coin[1].getParent() == null && coin[2].getParent() != null) {
+            frame.remove(coin[2]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 150");
+          } else if (coin[2].getParent() == null && coin[3].getParent() != null) {
+            frame.remove(coin[3]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 200");
+          } else if (coin[3].getParent() == null && coin[4].getParent() != null) {
+            frame.remove(coin[4]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 250");
+          } else if (coin[4].getParent() == null && coin[5].getParent() != null) {
+            frame.remove(coin[5]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 300");
+          } else if (coin[5].getParent() == null && coin[6].getParent() != null) {
+            frame.remove(coin[6]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 350");
+          } else if (coin[6].getParent() == null && coin[7].getParent() != null) {
+            frame.remove(coin[7]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 400");
+          } else if (coin[7].getParent() == null && coin[8].getParent() != null) {
+            frame.remove(coin[8]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 450");
+          } else if (coin[8].getParent() == null && coin[9].getParent() != null) {
+            frame.remove(coin[9]);
+            frame.revalidate();
+            frame.repaint();
+            clip_coin.setMicrosecondPosition(0);
+            clip_coin.start();
+            score.setText("Score: 500");
+          }
+        }
+        //del for death
+        else if (e.getKeyCode() == 127) {
+          frame.remove(marioFacingLeft);
+          frame.remove(marioFacingRight);
+          frame.remove(fireballFacingLeft);
+          frame.remove(fireballFacingRight);
+          frame.remove(healthBarFull);
+          frame.add(marioDeath);
+          frame.add(healthBarEmpty);
+          frame.add(gameOver);
+          frame.add(restart);
+          frame.revalidate();
+          frame.repaint();
+          Timer timer_death = new Timer(10, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              marioDeath.setLocation(marioDeath.getX(), marioDeath.getY() - 10);
+            }
+          });
+          timer_death.start();
+          clip_mainTheme.stop();
+          clip_death.start();
+          score.setSize(700, 70);
+          score.setText("Score: -999999");
+        }
+      }
+    });
+  }
+  @Override
+  public void run() {
+    try {
+      while (true) {
+        Thread.sleep(5);
+        if (marioFacingLeft.getParent() != null) {
+          fireballFacingLeftXMoved = marioFacingLeftX--;
+          fireballFacingLeft.setLocation(fireballFacingLeftXMoved, marioFacingRight.getY());
+        } else if (marioFacingRight.getParent() != null) {
+          fireballFacingRightXMoved = marioFacingRightX++;
+          fireballFacingRight.setLocation(fireballFacingRightXMoved, marioFacingRight.getY());
+        }
+      }
+    } catch (Exception e) {
+      System.err.println(e.getMessage());
+    }
+
+  }
+}
