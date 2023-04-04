@@ -1,2 +1,2 @@
 # Super-Mario
-An attempt at creating Super Mario from Scratch
+An attempt at recreating Super Mario from Scratch
